@@ -35,7 +35,7 @@ int boilSensor = 2; //boil sensor number
 
 int rimsSet = 150; //temp the rims is set at
 int liquorSet = 170; //temp the liquor is set at
-int boilSet = 209; //temp the boil is set at
+int boilSet = 208; //temp the boil is set at
 
 String pumpStatus = "0"; //is the pump on or off
 String rimsStatus = "0"; //is the rims on or off
@@ -88,20 +88,7 @@ void loop(){
 	} 
   }
   delay(25);
- 
-  EthernetClient client = server.available();  // Create a client connection
-  if (client) {
-    while (client.connected()) {
-      if (client.available()) {
-        char c = client.read();
- 
-        if (readString.length() < 100) { //read char by char HTTP request
- 
-          readString += c; //store characters to string
-        }
-        if (c == '\n') { //if HTTP request has ended
-          
-            /////////////////////Checking Pin Status
+/////////////////////Checking Pin Status
             if(readString.indexOf("pump=1") >0) //Check Pump Status
             {
               pumpStatus = "1";
@@ -206,6 +193,18 @@ void loop(){
             digitalWrite(boilPin, LOW);    // set pin boilPin low
           }
  
+  EthernetClient client = server.available();  // Create a client connection
+  if (client) {
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+ 
+        if (readString.length() < 100) { //read char by char HTTP request
+ 
+          readString += c; //store characters to string
+        }
+        if (c == '\n') { //if HTTP request has ended
+            
           ///////////////HTML Code
           client.println("HTTP/1.1 200 OK"); //send new page
           client.println("Content-Type: text/html");
@@ -231,32 +230,6 @@ void loop(){
           client.print(getOnOff(pumpPin));
           client.println("</strong></p>");
           client.println("</p>");
-          
-          ///////////////RIMS
-          client.println("<p>");
-          client.println("<a href=" + buildURL(pumpStatus, "1", liquorStatus, boilStatus) + "> Turn On RIMS</a>");
-          client.println("<a href=" + buildURL(pumpStatus, "0", liquorStatus, boilStatus) + ">Turn Off RIMS</a><br />");
-          client.print("<strong>RIMS is: ");
-          client.print(getOnOff(rimsPin));
-          client.print("<br />RIMS set to: <strong>");
-          client.print(getOnOffset(rimsStatus));
-          client.println("</strong><br />");
-          client.println("The RIMS temperature is:");
-          client.print(sensorTemps[rimsSensor]);
-          client.println("<br>");
-          client.println("The RIMS is set to:");
-          client.print(rimsSet);          
-          client.println("<form name='input' action='/' method='get'>");
-          client.println("<input type='hidden' name='rims' value='" + rimsStatus + "'>");
-          client.println("<input type='hidden' name='pump' value='" + pumpStatus +"'>");
-          client.println("<input type='hidden' name='liquor' value='" + liquorStatus +"'>");          
-          client.println("<input type='hidden' name='boil' value='" + boilStatus +"'>");                    
-          client.println("Set RIMS Temp:");
-          client.println("<input type='text' name='rimsTemp'>");
-          client.println("<input type='submit' value='Submit'>");
-          client.println("</form");
-          client.println("</p>");
-          client.println("</br>");
     
           ///////////////Liquor
           client.println("<p>");        
@@ -283,7 +256,33 @@ void loop(){
           client.println("</form");
           client.println("</p>");
           client.println("</br>");
-          
+                    
+          ///////////////RIMS
+          client.println("<p>");
+          client.println("<a href=" + buildURL(pumpStatus, "1", liquorStatus, boilStatus) + "> Turn On RIMS</a>");
+          client.println("<a href=" + buildURL(pumpStatus, "0", liquorStatus, boilStatus) + ">Turn Off RIMS</a><br />");
+          client.print("<strong>RIMS is: ");
+          client.print(getOnOff(rimsPin));
+          client.print("<br />RIMS set to: <strong>");
+          client.print(getOnOffset(rimsStatus));
+          client.println("</strong><br />");
+          client.println("The RIMS temperature is:");
+          client.print(sensorTemps[rimsSensor]);
+          client.println("<br>");
+          client.println("The RIMS is set to:");
+          client.print(rimsSet);          
+          client.println("<form name='input' action='/' method='get'>");
+          client.println("<input type='hidden' name='rims' value='" + rimsStatus + "'>");
+          client.println("<input type='hidden' name='pump' value='" + pumpStatus +"'>");
+          client.println("<input type='hidden' name='liquor' value='" + liquorStatus +"'>");          
+          client.println("<input type='hidden' name='boil' value='" + boilStatus +"'>");                    
+          client.println("Set RIMS Temp:");
+          client.println("<input type='text' name='rimsTemp'>");
+          client.println("<input type='submit' value='Submit'>");
+          client.println("</form");
+          client.println("</p>");
+          client.println("</br>");
+
           ///////////////Boil
           client.println("<p>");            
           client.println("<a href=" + buildURL(pumpStatus, rimsStatus, liquorStatus, "1") + ">Turn On Boil</a>");
