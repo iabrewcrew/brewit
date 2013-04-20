@@ -1,15 +1,17 @@
 #include <SPI.h>
 #include <Ethernet.h>
+#include <SD.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
  
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; //physical mac address
-byte ip[] = { 192, 168, 0, 21 }; // ip in lan
+byte mac[] = { 0xDF, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; //physical mac address
+byte ip[] = { 192, 168, 0, 22 }; // ip in lan
 byte gateway[] = { 192, 168, 0, 254 }; // internet access via router
 byte subnet[] = { 255, 255, 255, 0 }; //subnet mask
 EthernetServer server(80); //server port
- 
-String readString;
+File webFile;   // the web page file on the SD card
+String HTTP_req; // stores the HTTP request
+
 byte isOn;
 
 DeviceAddress deviceAddress;
@@ -47,7 +49,7 @@ String rims = "rims=";
 String liquor = "liquor=";
 String boil = "boil=";
 
-int readLength = 0; //length of readString
+int readLength = 0; //length of HTTP_req
 int beginLocation = 0; //Begining location of search string
 String inputString = ""; //Substring to be converted into char array
 char carry [10]; //Array of characters to be converted to int for temp set
@@ -73,243 +75,251 @@ void setup(){
   server.begin();
   
   numberOfDevices = sensors.getDeviceCount(); //get number of temp sensors
+  
+  // initialize SD card
+  Serial.println("Initializing SD card ...");
+ 
+  if(!SD.begin(4)) {
+    Serial.println("ERROR - SD card initialization failed!");
+    return;
+  }
+  
+  Serial.println("SUCCESS - SD card initialized.");
+  // check for index.htm file
+  if (!SD.exists("index.htm")) {
+    Serial.println("ERROR - Can't find index.htm file!");
+    return;
+  }
+  
+  Serial.println("SUCCESS - Found index.htm file."); 
 }
 
 
 void loop(){
   /////////////////////Get Sensor data
-  sensors.requestTemperatures(); // Send the command to get temperatures
-  
-  for(int i=0;i<numberOfDevices; i++) // Loop through each device, print out temperature data
-  {
-    if(sensors.getAddress(deviceAddress, i))
-  {
-           sensorTemps[i] = sensors.getTempF(deviceAddress);
-	} 
-  }
-  delay(25);
-/////////////////////Checking Pin Status
-            if(readString.indexOf("pump=1") >0) //Check Pump Status
-            {
-              pumpStatus = "1";
-            }
-            else
-            if(readString.indexOf("pump=0") >0) //Check Pump Status
-            {
-               pumpStatus = "0";
-            }
-            
-            if(readString.indexOf("rims=1") >0) // Check RIMS Status
-            {
-              rimsStatus = "1";
-            }
-            else
-            if(readString.indexOf("rims=0") >0) // Check RIMS Status
-            {
-               rimsStatus = "0";
-            }
-            
-            if(readString.indexOf("liquor=1") >0) // Check Liqour Status
-            {
-              liquorStatus = "1";
-            }
-            else
-            if(readString.indexOf("liquor=0") >0) // Check Liqour Status
-            {
-               liquorStatus = "0";
-            }
-            
-            if(readString.indexOf("boil=1") >0) // Check Boil Status
-            {
-              boilStatus = "1";
-            }
-            else
-            if(readString.indexOf("boil=0") >0) // Check Boil Status
-            {
-               boilStatus = "0";
-            } 
-            
-            
-            if(readString.indexOf("rimsTemp=") >0)
-            {
-            readLength = readString.length() - 11; //find end of string and remove http end 
-            beginLocation = readString.indexOf("rimsTemp=") + 9; //find rimsTemp= and add 9 to find value after =
-            inputString = readString.substring(beginLocation, readLength); //inputSting is the substring of the readString containing the set vale
-            inputString.toCharArray(carry, sizeof(carry)); //convert string value to char array
-            rimsSet = atoi(carry); //convert char array to rimsSet value
-            }
-            if(readString.indexOf("liquorTemp=") >0)
-            {
-            readLength = readString.length() - 11; //find end of string and remove http end
-            beginLocation = readString.indexOf("liquorTemp=") + 11; //find liquorTemp= and add 11 to find value after =
-            inputString = readString.substring(beginLocation, readLength); //inputSting is the substring of the readString containing the set vale
-            inputString.toCharArray(carry, sizeof(carry)); //convert string value to char array
-            liquorSet = atoi(carry); //convert char array to liquorSet value
-            }
-            if(readString.indexOf("boilTemp=") >0)
-            {
-            readLength = readString.length() - 11; //find end of string and remove http end
-            beginLocation  = readString.indexOf("boilTemp=") + 9; //find boilTemp= and add 9 to find value after =
-            inputString = readString.substring(beginLocation, readLength); //inputSting is the substring of the readString containing the set vale
-            inputString.toCharArray(carry, sizeof(carry)); //convert string value to char array
-            boilSet = atoi(carry); //convert char array to boilSet value
-            }
-            
-           readString=""; //clearing string for next read
-           
-          ///////////////////// Control Arduino Pins
-          if(pumpStatus == "1") //checks for on
-          {
-            digitalWrite(pumpPin, HIGH);    // set pin pumpPin high
-          }
-          if(pumpStatus == "0")//checks for off
-          {
-            //digitalWrite(rimsPin, LOW);    // set pin rimsPin low
-            digitalWrite(pumpPin, LOW);    // set pin pumpPin low
-          }
-          if(rimsStatus == "1" && sensorTemps[rimsSensor] < rimsSet)//checks for on
-          {
-            digitalWrite(rimsPin, HIGH);    // set pin rimsPin high
-            //digitalWrite(pumpPin, HIGH);    // set pin pumpPin high
-          }
-          if((rimsStatus == "0" ) || (rimsStatus == "1" && sensorTemps[rimsSensor] > rimsSet))//checks for off
-          {
-            digitalWrite(rimsPin, LOW);    // set pin rimsPin low
-          }
-          if(liquorStatus == "1" && sensorTemps[liquorSensor] < liquorSet)//checks for on
-          {
-            digitalWrite(liquorPin, HIGH);    // set pin liquorPin high
-          }
-          if((liquorStatus == "0" ) || (liquorStatus == "1" && sensorTemps[liquorSensor] > liquorSet))//checks for off
-          {
-            digitalWrite(liquorPin, LOW);    // set pin liquorPin low
-          }
-          if(boilStatus == "1" && sensorTemps[boilSensor] < boilSet)//checks for on
-          {
-            digitalWrite(boilPin, HIGH);    // set pin boilPin high
-          }
-          if((boilStatus == "0" ) || (boilStatus == "1" && sensorTemps[boilSensor] > boilSet))//checks for off
-          {
-            digitalWrite(boilPin, LOW);    // set pin boilPin low
-          }
- 
+//  sensors.requestTemperatures(); // Send the command to get temperatures
+//  
+//  for(int i=0;i<numberOfDevices; i++) // Loop through each device, print out temperature data
+//  {
+//    if(sensors.getAddress(deviceAddress, i))
+//  {
+//           sensorTemps[i] = sensors.getTempF(deviceAddress);
+//	} 
+//  }
+//  delay(25);
+///////////////////////Checking Pin Status
+//            if(HTTP_req.indexOf("pump=1") >0) //Check Pump Status
+//            {
+//              pumpStatus = "1";
+//            }
+//            else
+//            if(HTTP_req.indexOf("pump=0") >0) //Check Pump Status
+//            {
+//               pumpStatus = "0";
+//            }
+//            
+//            if(HTTP_req.indexOf("rims=1") >0) // Check RIMS Status
+//           {
+//              rimsStatus = "1";
+//            }
+//            else
+//            if(HTTP_req.indexOf("rims=0") >0) // Check RIMS Status
+//            {
+//               rimsStatus = "0";
+//            }
+//            
+//            if(HTTP_req.indexOf("liquor=1") >0) // Check Liqour Status
+//            {
+//              liquorStatus = "1";
+//            }
+//            else
+//            if(HTTP_req.indexOf("liquor=0") >0) // Check Liqour Status
+//            {
+//               liquorStatus = "0";
+//            }
+//            
+//            if(HTTP_req.indexOf("boil=1") >0) // Check Boil Status
+//            {
+//              boilStatus = "1";
+//            }
+//            else
+//            if(HTTP_req.indexOf("boil=0") >0) // Check Boil Status
+//            {
+//               boilStatus = "0";
+//            } 
+//            
+//            
+//            if(HTTP_req.indexOf("rimsTemp=") >0)
+//            {
+//            readLength = HTTP_req.length() - 11; //find end of string and remove http end 
+//            beginLocation = HTTP_req.indexOf("rimsTemp=") + 9; //find rimsTemp= and add 9 to find value after =
+//            inputString = HTTP_req.substring(beginLocation, readLength); //inputSting is the substring of the HTTP_req containing the set vale
+//            inputString.toCharArray(carry, sizeof(carry)); //convert string value to char array
+//            rimsSet = atoi(carry); //convert char array to rimsSet value
+//            }
+//            if(HTTP_req.indexOf("liquorTemp=") >0)
+//            {
+//            readLength = HTTP_req.length() - 11; //find end of string and remove http end
+//            beginLocation = HTTP_req.indexOf("liquorTemp=") + 11; //find liquorTemp= and add 11 to find value after =
+//            inputString = HTTP_req.substring(beginLocation, readLength); //inputSting is the substring of the HTTP_req containing the set vale
+//            inputString.toCharArray(carry, sizeof(carry)); //convert string value to char array
+//            liquorSet = atoi(carry); //convert char array to liquorSet value
+//            }
+//            if(HTTP_req.indexOf("boilTemp=") >0)
+//            {
+//            readLength = HTTP_req.length() - 11; //find end of string and remove http end
+//            beginLocation  = HTTP_req.indexOf("boilTemp=") + 9; //find boilTemp= and add 9 to find value after =
+//            inputString = HTTP_req.substring(beginLocation, readLength); //inputSting is the substring of the HTTP_req containing the set vale
+//            inputString.toCharArray(carry, sizeof(carry)); //convert string value to char array
+//            boilSet = atoi(carry); //convert char array to boilSet value
+//            }
+//            
+//           HTTP_req=""; //clearing string for next read
+//           
+//          ///////////////////// Control Arduino Pins
+//          if(pumpStatus == "1") //checks for on
+//          {
+//            digitalWrite(pumpPin, HIGH);    // set pin pumpPin high
+//          }
+//          if(pumpStatus == "0")//checks for off
+//          {
+//            //digitalWrite(rimsPin, LOW);    // set pin rimsPin low
+//            digitalWrite(pumpPin, LOW);    // set pin pumpPin low
+//          }
+//          if(rimsStatus == "1" && sensorTemps[rimsSensor] < rimsSet)//checks for on
+//          {
+//            digitalWrite(rimsPin, HIGH);    // set pin rimsPin high
+//            //digitalWrite(pumpPin, HIGH);    // set pin pumpPin high
+//          }
+//          if((rimsStatus == "0" ) || (rimsStatus == "1" && sensorTemps[rimsSensor] > rimsSet))//checks for off
+//          {
+//            digitalWrite(rimsPin, LOW);    // set pin rimsPin low
+//          }
+//          if(liquorStatus == "1" && sensorTemps[liquorSensor] < liquorSet)//checks for on
+//          {
+//            digitalWrite(liquorPin, HIGH);    // set pin liquorPin high
+//          }
+//          if((liquorStatus == "0" ) || (liquorStatus == "1" && sensorTemps[liquorSensor] > liquorSet))//checks for off
+//          {
+//            digitalWrite(liquorPin, LOW);    // set pin liquorPin low
+//          }
+//          if(boilStatus == "1" && sensorTemps[boilSensor] < boilSet)//checks for on
+//          {
+//            digitalWrite(boilPin, HIGH);    // set pin boilPin high
+//          }
+//          if((boilStatus == "0" ) || (boilStatus == "1" && sensorTemps[boilSensor] > boilSet))//checks for off
+//          {
+//            digitalWrite(boilPin, LOW);    // set pin boilPin low
+//          }
+
+if (!server.available()){
+  //Serial.println("Server unavailable...");
+}
+
   EthernetClient client = server.available();  // Create a client connection
+ // Serial.println("Initiating http client...");
   if (client) {
     while (client.connected()) {
+      Serial.println("Client Connected ...");
       if (client.available()) {
         char c = client.read();
  
-        if (readString.length() < 100) { //read char by char HTTP request
+        if (HTTP_req.length() < 100) { //read char by char HTTP request
  
-          readString += c; //store characters to string
+          HTTP_req += c; //store characters to string
+          //Serial.print(HTTP_req);
         }
         if (c == '\n') { //if HTTP request has ended
-            
-          ///////////////HTML Code
+           
+          // send a standard http response header
+          // begin header
           client.println("HTTP/1.1 200 OK"); //send new page
-          client.println("Content-Type: text/html");
-          client.println();
+          // conte-type changes based on request
+          // remainder of header sends below, depending on condition
           
-          ///////////////Header 
-          client.println("<HTML>");
-          client.println("<HEAD>");
-          client.print("<meta http-equiv=\"refresh\" content=\"5\">");
-          client.println("<center><TITLE>Brew Automation</TITLE>");
-          client.println("</HEAD>");
-          client.println("<BODY>");
-          client.println("<H1>Brew Automation</H1>");
-          client.println("Version 1.0.0</p>");
-          client.println("Created By: Nick Jellings, Cale Bultman, Chris Wilson");
-          client.println("<hr />");
+          //Ajax request
+//          if (HTTP_req.indexOf("ajax_switch") > -1) 
+//          {
+//            client.println("Content-Type: text/xml");
+//            client.println("Connection: keep-alive");
+//            client.println();
+//             //send XML file containing input states
+//            XML_response(client);           
+//          }
+//          
+//          else {
+            // send rest of HTTP header
+            client.println("Content-Type: text/html");
+            client.println("Connection: keep-alive");
+            client.println();
+            // send web page
+            Serial.println("Opening file...");
+            webFile = SD.open("index.htm"); // open web page file
+            if (webFile) {
+              while(webFile.available()){
+                client.write(webFile.read());  //send web page to client
+                Serial.println("Reading file...");
+              }
+              webFile.close();
+              Serial.println("Closing file...");
+            }
+//          }
           
-          ///////////////Pump
-          client.println("<p>");
-          client.println("<a href=" + buildURL("1", rimsStatus, liquorStatus, boilStatus) + ">Turn On Pump</a>");
-          client.println("<a href=" + buildURL("0", rimsStatus, liquorStatus, boilStatus) + ">Turn Off Pump</a><br />");
-          client.print("<strong>Pump is set to: ");
-          client.print(getOnOff(pumpPin));
-          client.println("</strong></p>");
-          client.println("</p>");
-    
-          ///////////////Liquor
-          client.println("<p>");        
-          client.println("<a href=" + buildURL(pumpStatus, rimsStatus, "1", boilStatus) + ">Turn On Liquor</a>");
-          client.println("<a href=" + buildURL(pumpStatus, rimsStatus, "0", boilStatus) + ">Turn Off Liquor</a><br />");
-          client.print("Liquor is: <strong>");
-          client.print(getOnOff(liquorPin));
-          client.print("<br />Liquor set to: <strong>");
-          client.print(getOnOffset(liquorStatus));
-          client.println("</strong>");
-          client.println("<br/>The liquor temperature is:");
-          client.print(sensorTemps[liquorSensor]);
-          client.println("<br>");
-          client.println("The liquor is set to:");
-          client.print(liquorSet);  
-          client.println("<form name='input' action='/' method='get'>");
-          client.println("<input type='hidden' name='rims' value='" + rimsStatus + "'>");
-          client.println("<input type='hidden' name='pump' value='" + pumpStatus +"'>");
-          client.println("<input type='hidden' name='liquor' value='" + liquorStatus +"'>");          
-          client.println("<input type='hidden' name='boil' value='" + boilStatus +"'>");                    
-          client.println("Set Liquor Temp:");
-          client.println("<input type='text' name='liquorTemp'>");
-          client.println("<input type='submit' value='Submit'>");
-          client.println("</form");
-          client.println("</p>");
-          client.println("</br>");
-                    
-          ///////////////RIMS
-          client.println("<p>");
-          client.println("<a href=" + buildURL(pumpStatus, "1", liquorStatus, boilStatus) + "> Turn On RIMS</a>");
-          client.println("<a href=" + buildURL(pumpStatus, "0", liquorStatus, boilStatus) + ">Turn Off RIMS</a><br />");
-          client.print("<strong>RIMS is: ");
-          client.print(getOnOff(rimsPin));
-          client.print("<br />RIMS set to: <strong>");
-          client.print(getOnOffset(rimsStatus));
-          client.println("</strong><br />");
-          client.println("The RIMS temperature is:");
-          client.print(sensorTemps[rimsSensor]);
-          client.println("<br>");
-          client.println("The RIMS is set to:");
-          client.print(rimsSet);          
-          client.println("<form name='input' action='/' method='get'>");
-          client.println("<input type='hidden' name='rims' value='" + rimsStatus + "'>");
-          client.println("<input type='hidden' name='pump' value='" + pumpStatus +"'>");
-          client.println("<input type='hidden' name='liquor' value='" + liquorStatus +"'>");          
-          client.println("<input type='hidden' name='boil' value='" + boilStatus +"'>");                    
-          client.println("Set RIMS Temp:");
-          client.println("<input type='text' name='rimsTemp'>");
-          client.println("<input type='submit' value='Submit'>");
-          client.println("</form");
-          client.println("</p>");
-          client.println("</br>");
-
-          ///////////////Boil
-          client.println("<p>");            
-          client.println("<a href=" + buildURL(pumpStatus, rimsStatus, liquorStatus, "1") + ">Turn On Boil</a>");
-          client.println("<a href=" + buildURL(pumpStatus, rimsStatus, liquorStatus, "0") + ">Turn Off Boil</a><br />");
-          client.print("Boil is: <strong>");
-          client.print(getOnOff(boilPin));
-          client.print("<br />Boil set to: <strong>");
-          client.print(getOnOffset(boilStatus));
-          client.println("</strong><br />");
-          client.println("The boil temperature is:");
-          client.print(sensorTemps[boilSensor]);
-          client.println("<br>");
-          client.println("The boil is set to:");
-          client.print(boilSet);
-          client.println("<form name='input' action='/' method='get'>");
-          client.println("<input type='hidden' name='rims' value='" + rimsStatus + "'>");
-          client.println("<input type='hidden' name='pump' value='" + pumpStatus +"'>");
-          client.println("<input type='hidden' name='liquor' value='" + liquorStatus +"'>");          
-          client.println("<input type='hidden' name='boil' value='" + boilStatus +"'>");                    
-          client.println("Set Boil Temp:");
-          client.println("<input type='text' name='boilTemp'>");
-          client.println("<input type='submit' value='Submit'>");
-          client.println("</form");
-          client.println("</p></BODY>");
-          client.println("</HTML>");
+          // display received HTTP request on serial port
+          //Serial.print(HTTP_req);
+          HTTP_req = "";  //finished with the request, empty the string
+          break;        
+          // end header
+          
+//          
+//          client.println("<a href=" + buildURL("1", rimsStatus, liquorStatus, boilStatus) + ">Turn On Pump</a>");
+//          client.println("<a href=" + buildURL("0", rimsStatus, liquorStatus, boilStatus) + ">Turn Off Pump</a><br />");
+//          client.print(getOnOff(pumpPin));
+//    
+//          ///////////////Liquor
+//          client.println("<a href=" + buildURL(pumpStatus, rimsStatus, "1", boilStatus) + ">Turn On Liquor</a>");
+//          client.println("<a href=" + buildURL(pumpStatus, rimsStatus, "0", boilStatus) + ">Turn Off Liquor</a><br />");
+//          client.print(getOnOff(liquorPin));
+//          client.print(getOnOffset(liquorStatus));
+//          client.print(sensorTemps[liquorSensor]);
+//          client.print(liquorSet);  
+//          client.println("<form name='input' action='/' method='get'>");
+//          client.println("<input type='hidden' name='rims' value='" + rimsStatus + "'>");
+//          client.println("<input type='hidden' name='pump' value='" + pumpStatus +"'>");
+//          client.println("<input type='hidden' name='liquor' value='" + liquorStatus +"'>");          
+//          client.println("<input type='hidden' name='boil' value='" + boilStatus +"'>");                    
+//          client.println("<input type='text' name='liquorTemp'>");
+//          client.println("<input type='submit' value='Submit'>");
+//                   
+//          ///////////////RIMS
+//          client.println("<a href=" + buildURL(pumpStatus, "1", liquorStatus, boilStatus) + "> Turn On RIMS</a>");
+//          client.println("<a href=" + buildURL(pumpStatus, "0", liquorStatus, boilStatus) + ">Turn Off RIMS</a><br />");
+//          client.print(getOnOff(rimsPin));
+//          client.print(getOnOffset(rimsStatus));
+//          client.print(sensorTemps[rimsSensor]);
+//          client.print(rimsSet);          
+//          client.println("<form name='input' action='/' method='get'>");
+//          client.println("<input type='hidden' name='rims' value='" + rimsStatus + "'>");
+//          client.println("<input type='hidden' name='pump' value='" + pumpStatus +"'>");
+//          client.println("<input type='hidden' name='liquor' value='" + liquorStatus +"'>");          
+//          client.println("<input type='hidden' name='boil' value='" + boilStatus +"'>");                    
+//          client.println("<input type='text' name='rimsTemp'>");
+//          client.println("<input type='submit' value='Submit'>");
+//          client.println("<a href=" + buildURL(pumpStatus, rimsStatus, liquorStatus, "1") + ">Turn On Boil</a>");
+//          client.println("<a href=" + buildURL(pumpStatus, rimsStatus, liquorStatus, "0") + ">Turn Off Boil</a><br />");
+//
+//          client.print(getOnOff(boilPin));
+//          client.print(getOnOffset(boilStatus));
+//          client.print(sensorTemps[boilSensor]);
+//          client.print(boilSet);
+//          client.println("<form name='input' action='/' method='get'>");
+//          client.println("<input type='hidden' name='rims' value='" + rimsStatus + "'>");
+//          client.println("<input type='hidden' name='pump' value='" + pumpStatus +"'>");
+//          client.println("<input type='hidden' name='liquor' value='" + liquorStatus +"'>");          
+//          client.println("<input type='hidden' name='boil' value='" + boilStatus +"'>");                   
  
           delay(1);
+          Serial.println("Stopping client...");
           client.stop(); //stopping client
         }
       }
@@ -362,3 +372,10 @@ String buildURL (String myPumpStatus, String myRimsStatus, String myLiquorStatus
   return constructor;
 }
 
+void XML_response(EthernetClient cl)
+{
+  cl.print("<?xml version = \"1.0\" ?>");
+  cl.print("<inputs>");
+  cl.print("</inputs");
+ 
+}
