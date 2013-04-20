@@ -58,8 +58,7 @@
 			
 			<br />
 			The RIMS is set to:
-			//RIMS SetTemp
-			client.print(rimsSet);          
+			//RIMS SetTemp        
 			<form name='input' action='/' method='get'>
 				<input type='hidden' name='rims' value='" + rimsStatus + "'>
 				<input type='hidden' name='pump' value='" + pumpStatus +"'>
@@ -77,80 +76,30 @@
 			<br />
 			Boil is: 
 			<strong>
-				//Boil OnOffStatus
+			//Boil OnOffStatus
 			</strong>
 			<br />
 			Boil set to: 
 			<strong>
 			</strong>
-			  client.print(getOnOffset(boilStatus));
-			  </strong><br />
-			  The boil temperature is:
-			  client.print(sensorTemps[boilSensor]);
-			  <br>
-			  The boil is set to:
-			  client.print(boilSet);
-			  <form name='input' action='/' method='get'>
-			  <input type='hidden' name='rims' value='" + rimsStatus + "'>
-			  <input type='hidden' name='pump' value='" + pumpStatus +"'>
-			  <input type='hidden' name='liquor' value='" + liquorStatus +"'>          
-			  <input type='hidden' name='boil' value='" + boilStatus +"'>                    
-			  Set Boil Temp:
-			  <input type='text' name='boilTemp'>
-			  <input type='submit' value='Submit'>
-			  </form
-			  </p></BODY>
-			  </HTML>
-	 
-			  delay(1);
-			  client.stop(); //stopping client
-			}
-		  }
-		}
-	  }
-	}
-
-	String getOnOff(int val){ 
-	  isOn = digitalRead(val); //get bit val of the pin
-	  if (isOn)
-	  {  
-		 return "<FONT COLOR=""green"">ON</FONT>";
-	  }
-	  else
-	  {
-		 return "<FONT COLOR=""red"">OFF</FONT>";
-	  }
-	}
-	  
-	float getTempF(DeviceAddress tempSensor)
-	{
-	  sensors.requestTemperatures();
-	  float temperatureF = (sensors.getTempF(tempSensor));
-	 
-	   return temperatureF;  
-	}
-
-	String getOnOffset(String val){ 
-	  if(val == "1")
-	  {  
-		 return "<FONT COLOR=""green"">ON</FONT>";
-	  }
-	  else
-	  if(val == "0")
-	  {
-		 return "<FONT COLOR=""red"">OFF</FONT>";
-	  }
-	}
-
-	String buildURL (String myPumpStatus, String myRimsStatus, String myLiquorStatus, String myBoilStatus)
-	{
-	  String constructor = "?";
-	  constructor += pump + myPumpStatus;
-	  constructor += "&";
-	  constructor += rims + myRimsStatus;  
-	  constructor += "&";
-	  constructor += liquor + myLiquorStatus;  
-	  constructor += "&";  
-	  constructor += boil + myBoilStatus;  
-	  return constructor;
-	}
+			//boil status (get onoffset)
+		    </strong>
+			<br />
+			The boil temperature is:
+			//(sensorTemps[boilSensor]);
+			<br />
+			The boil is set to:
+			  
+			(boilSet);
+			<form name='input' action='/' method='get'>
+				<input type='hidden' name='rims' value='" + rimsStatus + "'>
+				<input type='hidden' name='pump' value='" + pumpStatus +"'>
+				<input type='hidden' name='liquor' value='" + liquorStatus +"'>          
+				<input type='hidden' name='boil' value='" + boilStatus +"'>                    
+				Set Boil Temp:
+				<input type='text' name='boilTemp'>
+				<input type='submit' value='Submit'>
+			</form>
+		</div>
+	</BODY>
+</HTML>
