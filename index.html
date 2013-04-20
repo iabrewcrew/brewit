@@ -1,11 +1,21 @@
 <HTML>
   <HEAD>
-		<meta http-equiv="refresh" content="5">
+		<!-- <meta http-equiv="refresh" content="5"> -->
 		<center><TITLE>Brew Automation</TITLE>
+		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		<script src="http://code.jquery.com/jquery-migrate-1.1.1.min.js"></script>	
+		<script>
+		$(document).ready(function(){
+			console.log("Ready");
+			var print = $("#version").text("Version 2.0.0");
+			console.log(print);
+			
+		});
+		</script>
 	</HEAD>
 	<BODY>
 		<H1>Brew Automation</H1>
-		<p>Version 1.0.0</p>
+		<div id="version">Veresion 1.0.0</div>
 		Created By: Nick Jellings, Cale Bultman, Chris Wilson
 			  <hr />
 			  
