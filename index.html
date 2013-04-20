@@ -1,0 +1,156 @@
+<HTML>
+  <HEAD>
+		<meta http-equiv="refresh" content="5">
+		<center><TITLE>Brew Automation</TITLE>
+	</HEAD>
+	<BODY>
+		<H1>Brew Automation</H1>
+		<p>Version 1.0.0</p>
+		Created By: Nick Jellings, Cale Bultman, Chris Wilson
+			  <hr />
+			  
+		<div>
+			<a href="">Turn On Pump</a>
+			<a href="">Turn Off Pump</a><br />
+			<strong>Pump is set to: </strong> //pump status
+		</div>
+		<div>
+			<a href="">Turn On Liquor</a>
+			<a href="">Turn Off Liquor</a>
+			<br />
+			Liquor is: 
+			<strong>//liquor status</strong>
+			<br />
+			Liquor set to: 
+			<strong>// liquor OnOffSet </strong>
+			<br/>
+			The liquor temperature is:
+			//Liquor Temp
+			<br>
+			The liquor is set to:
+			//liquorSetTemp
+			<form name='input' action='/' method='get'>
+			    <input type='hidden' name='rims' value='" + rimsStatus + "'>
+				<input type='hidden' name='pump' value='" + pumpStatus +"'>
+				<input type='hidden' name='liquor' value='" + liquorStatus +"'>          
+				<input type='hidden' name='boil' value='" + boilStatus +"'>                    
+				Set Liquor Temp:
+				<input type='text' name='liquorTemp'>
+				<input type='submit' value='Submit'>
+			</form>
+		</div>
+		<div>
+			<a href=""> Turn On RIMS</a>
+			<a href="">Turn Off RIMS</a>
+			<br />
+			<strong>RIMS is: 
+			//RIMS Status
+			</strong>
+			<br />
+			RIMS set to: 
+			<strong>
+				///RIMS On Off Set
+				
+			</strong>
+			<br />
+			The RIMS temperature is:
+			//RIMS Temperature
+			
+			<br />
+			The RIMS is set to:
+			//RIMS SetTemp
+			client.print(rimsSet);          
+			<form name='input' action='/' method='get'>
+				<input type='hidden' name='rims' value='" + rimsStatus + "'>
+				<input type='hidden' name='pump' value='" + pumpStatus +"'>
+				<input type='hidden' name='liquor' value='" + liquorStatus +"'>          
+				<input type='hidden' name='boil' value='" + boilStatus +"'>                    
+				Set RIMS Temp:
+				<input type='text' name='rimsTemp'>
+				<input type='submit' value='Submit'>
+			</form>
+		</div>
+		
+		<div>         
+			<a href="">Turn On Boil</a>
+			<a href="">Turn Off Boil</a>
+			<br />
+			Boil is: 
+			<strong>
+				//Boil OnOffStatus
+			</strong>
+			<br />
+			Boil set to: 
+			<strong>
+			</strong>
+			  client.print(getOnOffset(boilStatus));
+			  </strong><br />
+			  The boil temperature is:
+			  client.print(sensorTemps[boilSensor]);
+			  <br>
+			  The boil is set to:
+			  client.print(boilSet);
+			  <form name='input' action='/' method='get'>
+			  <input type='hidden' name='rims' value='" + rimsStatus + "'>
+			  <input type='hidden' name='pump' value='" + pumpStatus +"'>
+			  <input type='hidden' name='liquor' value='" + liquorStatus +"'>          
+			  <input type='hidden' name='boil' value='" + boilStatus +"'>                    
+			  Set Boil Temp:
+			  <input type='text' name='boilTemp'>
+			  <input type='submit' value='Submit'>
+			  </form
+			  </p></BODY>
+			  </HTML>
+	 
+			  delay(1);
+			  client.stop(); //stopping client
+			}
+		  }
+		}
+	  }
+	}
+
+	String getOnOff(int val){ 
+	  isOn = digitalRead(val); //get bit val of the pin
+	  if (isOn)
+	  {  
+		 return "<FONT COLOR=""green"">ON</FONT>";
+	  }
+	  else
+	  {
+		 return "<FONT COLOR=""red"">OFF</FONT>";
+	  }
+	}
+	  
+	float getTempF(DeviceAddress tempSensor)
+	{
+	  sensors.requestTemperatures();
+	  float temperatureF = (sensors.getTempF(tempSensor));
+	 
+	   return temperatureF;  
+	}
+
+	String getOnOffset(String val){ 
+	  if(val == "1")
+	  {  
+		 return "<FONT COLOR=""green"">ON</FONT>";
+	  }
+	  else
+	  if(val == "0")
+	  {
+		 return "<FONT COLOR=""red"">OFF</FONT>";
+	  }
+	}
+
+	String buildURL (String myPumpStatus, String myRimsStatus, String myLiquorStatus, String myBoilStatus)
+	{
+	  String constructor = "?";
+	  constructor += pump + myPumpStatus;
+	  constructor += "&";
+	  constructor += rims + myRimsStatus;  
+	  constructor += "&";
+	  constructor += liquor + myLiquorStatus;  
+	  constructor += "&";  
+	  constructor += boil + myBoilStatus;  
+	  return constructor;
+	}
