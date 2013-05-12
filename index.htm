@@ -1,14 +1,67 @@
-<HTML>
-  <HEAD>
-		<!-- <meta http-equiv="refresh" content="5"> -->
-		<center><TITLE>Brew Automation</TITLE>
-		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-		<script src="http://code.jquery.com/jquery-migrate-1.1.1.min.js"></script>	
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Arduino Ajax Dial</title>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
 		<script>
-
+		$(document).ready(function(){
+			GetArduinoInputs();
+		});
+		function GetArduinoInputs(){
+			$.ajax({
+				type: "GET",
+				url: "ajax_inputs",
+				dataType: "xml",
+				success: function(xml){
+					$(xml).find('inputs').each(function(){
+						$('#input1').text($(this).find('button1').text());
+						$('#input2').text($(this).find('button2').text());
+						$('#input3').text($(this).find('analog1').text());
+						$('#liquorStatus').text($(this).find('liquorStatus').text());
+					});
+				}
+			});
+			setTimeout(GetArduinoInputs, 10000);
+		};
 		</script>
-	</HEAD>
-	<BODY>
+        // <script>
+		// function GetArduinoInputs()
+		// {
+			// nocache = "&nocache=" + Math.random() * 1000000;
+			// var request = new XMLHttpRequest();
+			// request.onreadystatechange = function()
+			// {
+				// if (this.readyState == 4) {
+					// if (this.status == 200) {
+						// if (this.responseXML != null) {
+							//extract XML data from XML file (containing switch states and analog value)
+							// document.getElementById("input1").innerHTML =
+								// this.responseXML.getElementsByTagName('button1')[0].childNodes[0].nodeValue;
+							// document.getElementById("input2").innerHTML =
+								// this.responseXML.getElementsByTagName('button2')[0].childNodes[0].nodeValue;
+							// document.getElementById("input3").innerHTML =
+								// this.responseXML.getElementsByTagName('analog1')[0].childNodes[0].nodeValue;
+						// }
+					// }
+				// }
+			// }
+			// request.open("GET", "ajax_inputs" + nocache, true);
+			// request.send(null);
+			// setTimeout('GetArduinoInputs()', 200);
+			
+		// }
+	// </script>
+    </head>
+    <!-- <body onload="GetArduinoInputs()"> -->
+	<body>
+		<div>Testing<br />
+		<h1>Arduino Inputs from SD Card Web Page using Ajax with XML</h1>
+        <p>Button 1 (pin 7): <span id="input1">...</span></p>
+        <p>Button 2 (pin 8): <span id="input2">...</span></p>
+        <p>Analog (A2): <span id="input3">...</span></p>
+		</div>
+		<center>
+		<div>
 		<H1>Brew Automation</H1>
 		<div id="version">Veresion 1.0.0</div>
 		Created By: Nick Jellings, Cale Bultman, Chris Wilson
@@ -23,8 +76,7 @@
 			<a href="">Turn On Liquor</a>
 			<a href="">Turn Off Liquor</a>
 			<br />
-			Liquor is: 
-			<strong>//liquor status</strong>
+			Liquor is: <span id="liquorStatus"></span>
 			<br />
 			Liquor set to: 
 			<strong>// liquor OnOffSet </strong>
@@ -106,5 +158,6 @@
 				<input type='submit' value='Submit'>
 			</form>
 		</div>
+		</center>
 	</BODY>
-</HTML>
+</html>
